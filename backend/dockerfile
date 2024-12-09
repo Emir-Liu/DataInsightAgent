@@ -1,0 +1,8 @@
+FROM python
+
+WORKDIR /workspace
+
+COPY resolv.conf /etc/resolv.conf
+
+RUN pip install -r requirements.txt
+
