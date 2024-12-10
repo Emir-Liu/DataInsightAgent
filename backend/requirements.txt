@@ -1,3 +1,12 @@
 python-dotenv
 langchain_core
 langchain_openai
+
+# search tools
+langchain_community
+
+# search engine
+duckduckgo_search
+
+
+aiohttp

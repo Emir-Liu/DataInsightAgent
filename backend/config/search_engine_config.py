@@ -1,0 +1,7 @@
+# bing相关配置
+BING_SEARCH_V7_SUBSCRIPTION_KEY = '716a8482ccf84724a9bea2bcf20769a7'
+BING_SEARCH_V7_ENDPOINT = 'https://api.bing.microsoft.com/'
+BING_SEARCH_MKT = 'zh-CN'
+
+# 连接最长时间
+SEARCH_ENGINE_TIMEOUT = 15
