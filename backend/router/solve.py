@@ -377,7 +377,7 @@ async def search_engine_qa_iter(content: str):
 from typing import List
 
 @router.get("/search_engine_qa", tags=["search engine qa"])
-async def search_engine_qa_stream(content: str, history: List[dict], ):
+async def search_engine_qa_stream(content: str, history: List[dict] = None, ):
     logger.info("访问api:/")
     r = search_engine_qa_iter(
         content=content,
