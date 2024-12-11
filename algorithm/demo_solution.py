@@ -108,24 +108,24 @@ def node(self, node_name: str) -> str
     # 你的代码块
     ```
 7. 最后一次回复应该是添加node_name为'response'的 response 节点，必须添加 response 节点，不要添加其他节点
+8. 所有的节点都必须和根节点连接在一起
 """
 
 
-# api_wrapper = BingSearchAPIWrapper()
-# tool = BingSearchResults(api_wrapper=api_wrapper)
-
-# ans = tool.invoke({"query": "2024年美国选举情况"})
-
-# print(f'search ans:{ans}')
-
 if __name__ == '__main__':
-    query = '2024年美国大选'
+
+    import datetime
+
+    current_time = datetime.datetime.now()
+
+    query = '2024年美国大选的结果'
+
     print(f'用户提出的问题:{query}')
     # 任务分解
     
     # 思考
     print('将任务分解为若干个子任务：')
-    prompt_task_ana = f'为了解决用户提出的问题，我们需要将复杂的问题进行分解，分解为若干个简单的问题，请一步一步思考。\n约束条件：1.如果用户提出的问题比较简单，可以直接回答，则复述用户的问题\n2.如果用户提出的问题比较复杂，则将问题分解，并且对各个子任务进行描述。\n用户问题:{query}'
+    prompt_task_ana = f'为了解决用户提出的问题，我们需要将复杂的问题进行分解，分解为若干个简单的问题，请一步一步思考。\n约束条件：1.如果用户提出的问题比较简单，可以直接回答，则复述用户的问题\n2.如果用户提出的问题比较复杂，则将问题分解，并且对各个子任务进行描述。\n用户问题:{query}\n当前时间：{current_time}'
     print(f'输入:{prompt_task_ana}')
     task_ana_ans = LLMOperator().chat_with_prompt(content = prompt_task_ana)
     print(f'输出:{task_ana_ans}')
@@ -136,4 +136,65 @@ if __name__ == '__main__':
     print(f'输入:{prompt_task_tree}')
     task_tree_ans = LLMOperator().chat_with_prompt(content = prompt_task_tree)
     print(f'输出:{task_tree_ans}')
+
+
+    import re
+    pattern = r'```python(.*?)```' 
+    matches = re.findall(pattern, task_tree_ans, re.DOTALL)
+    print(f'matches:{matches}')
+    python_cmd = matches[0]
+
+    # 获取图中节点
+    from demo_build_task_graph import TaskGraph, show_task_list
+    from langchain_experimental.utilities import PythonREPL
+    tool = PythonREPL()
+    total_cmd_str = f'{TaskGraph}\n{python_cmd}\n{show_task_list}'
+    # print(f'total_cmd_str:\n{total_cmd_str}')
+
+    ans = tool.run(total_cmd_str)
+
+
+    ans_list = ans.split('\n')
+    filter_ans_list = []
+    for tmp_ans_list in ans_list:
+        if tmp_ans_list:
+            filter_ans_list.append(tmp_ans_list)
+    print(f'filter_ans_list:{filter_ans_list}')
+
+    filter_ans_dict = {key:{} for key in filter_ans_list}
+
+    # 遍历问题，进行问题的检索，挑选及整理
+    for question, value in filter_ans_dict.items():
+        print(f'开始解决子问题：{question}')
+        from dotenv import load_dotenv
+
+        load_dotenv()
+
+        from langchain_community.tools.bing_search import BingSearchResults
+        from langchain_community.utilities import BingSearchAPIWrapper
+
+        api_wrapper = BingSearchAPIWrapper()
+        tool = BingSearchResults(api_wrapper=api_wrapper)
+
+        ans = tool.invoke({"query": question})
+
+        print(f'search ans:{ans}')
+
+        # 对问题和答案进行初步汇总
+        prompt_part_sum = f'为了解决用户的问题：{query},\n我们首先需要解决：{question},\n下面是这个问题的结果：{ans}\n, 对这个子任务的结果进行汇总'
+        part_task_sum_ans = LLMOperator().chat_with_prompt(content = prompt_part_sum)
+        print(f'输出:{part_task_sum_ans}')
+        filter_ans_dict[question]['ans'] = part_task_sum_ans
+
+
+    # 对之前内容进行汇总
+    total_ana_ans = ''
+    for question, value in filter_ans_dict.items():
+        part_total_ana_ans = f"对于子任务{question},得到下面的结果：\n{value['ans']}\n"
+        total_ana_ans += part_total_ana_ans
+
+    total_ans = f'为了解决用户的问题：{query}\n我们按照下面的步骤进行分析:\n{total_ana_ans}\n根据上面的问题和步骤，分析最终的结果。\n约束条件：\n1.最终的结果需要包含分析的各个步骤，分点回答\n2.最终的结果需要有详细的说明和分析内容'
+    total_sum_ans = LLMOperator().chat_with_prompt(content = total_ans)
+    print(f'最终的分析结果:{total_sum_ans}')
+
 

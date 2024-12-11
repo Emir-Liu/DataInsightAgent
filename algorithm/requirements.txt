@@ -13,7 +13,3 @@ aiohttp
 
 # exec python
 langchain_experimental
-
-
-uvicorn
-fastapi

@@ -75,25 +75,3 @@ class LLMOperator:
         # return ans.content
         return ans
 
-    async def chat_with_prompt_stream(self, content:str):
-        llm = self.get_llm_model()
-
-        prompt = PromptTemplate(
-            template="""{question}""",
-            input_variables=["question"],
-        )
-
-        parser = StrOutputParser()
-
-        chain = prompt | llm | parser
-
-
-        async for part in chain.astream({"question": content}):
-            yield part
-
-        # # print(f"question:{content}")
-        # ans = chain.invoke({"question": content})
-        # # print(f"ans:{ans}")
-
-        # # return ans.content
-        # return ans
